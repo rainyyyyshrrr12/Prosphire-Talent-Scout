@@ -24,9 +24,9 @@ class FreeLLMEngine:
         }
 
         self.models = {
-            "groq": primary_model or "llama-3.3-70b-versatile",
+            "groq": primary_model or "llama-3.1-8b-instant",
             "google": "gemini-2.5-flash",
-            "openrouter": "meta-llama/llama-3.3-70b-instruct:free",
+            "openrouter": "google/gemini-2.0-flash-lite-preview-02-05:free",
         }
 
         self.last_provider = None
