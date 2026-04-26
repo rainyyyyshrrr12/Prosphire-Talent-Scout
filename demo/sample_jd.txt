@@ -1,0 +1,23 @@
+Job Title: Senior AI Engineer
+
+Location: Bangalore (Hybrid)
+
+About the Role:
+We are looking for a Senior AI Engineer to join our core product team. You will build and deploy AI-powered features using LLMs and modern ML frameworks.
+
+Requirements:
+- 3+ years of experience in Python development
+- Strong experience with LLMs, LangChain, or similar frameworks
+- Experience building RAG systems and AI agents
+- Knowledge of vector databases (Pinecone, Chroma, Weaviate)
+- Familiarity with FastAPI or Django for building APIs
+- Docker and cloud deployment experience (AWS preferred)
+- B.Tech or higher in Computer Science or related field
+
+Nice to Have:
+- Published research or open-source contributions
+- Experience with MLOps and model monitoring
+- Team leadership experience
+
+Salary Range: 15-25 LPA
+Notice Period: Preferably 30-45 days

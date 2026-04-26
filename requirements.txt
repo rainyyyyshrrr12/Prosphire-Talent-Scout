@@ -1,0 +1,8 @@
+groq
+google-generativeai
+openai
+python-dotenv
+requests
+flask
+gunicorn
+openpyxl

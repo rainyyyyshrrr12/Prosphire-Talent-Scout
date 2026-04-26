@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="AI-Powered Talent Scouting & Engagement Agent — Discover, match, engage, and rank candidates autonomously.">
+    <title>Prosphire Talent Scout — Agentic Recruitment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <script>
+        // Apply saved theme immediately to prevent flash
+        (function() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+    <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
+                <span class="logo-text">Prosphire <span class="accent">Talent Scout</span></span>
+                <span class="version-badge">v3.0</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+                <p class="tagline">Discover, engage, and rank candidates from a single job description.</p>
+                <div class="theme-toggle" id="themeToggle" role="switch" aria-label="Toggle dark mode" tabindex="0">
+                    <span class="theme-toggle-label" id="themeLabel">Dark</span>
+                    <div class="theme-toggle-track"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Dataset Management Section -->
+        <section class="card dataset-card" id="dataset-section">
+            <div class="card-header">
+                <h2>Talent Pool Dataset</h2>
+                <div class="dataset-actions">
+                    <a href="/dataset/download-sample" class="btn-sm btn-download" id="downloadSampleBtn">Download Sample</a>
+                    <button class="btn-sm btn-reset" onclick="resetDataset()" id="resetDatasetBtn">Reset Default</button>
+                </div>
+            </div>
+            <div class="dataset-body">
+                <div class="dataset-dropzone" id="dropzone">
+                    <input type="file" id="datasetFileInput" accept=".xlsx,.xls" hidden>
+                    <div class="dropzone-content" id="dropzoneContent">
+                        <span class="dropzone-icon">Upload</span>
+                        <p class="dropzone-text">Drag & drop your <strong>.xlsx</strong> file here, or <span class="dropzone-link" onclick="document.getElementById('datasetFileInput').click()">browse</span></p>
+                        <p class="dropzone-hint">Upload a custom candidate dataset to use as your talent pool</p>
+                    </div>
+                    <div class="dropzone-uploading hidden" id="dropzoneUploading">
+                        <span class="spinner"></span>
+                        <span>Uploading & validating...</span>
+                    </div>
+                </div>
+                <div class="dataset-stats" id="datasetStats">
+                    <div class="ds-stat"><span class="ds-stat-value" id="dsTotal">—</span><span class="ds-stat-label">Candidates</span></div>
+                    <div class="ds-stat"><span class="ds-stat-value" id="dsLocations">—</span><span class="ds-stat-label">Locations</span></div>
+                    <div class="ds-stat"><span class="ds-stat-value" id="dsAvgExp">—</span><span class="ds-stat-label">Avg Exp (yrs)</span></div>
+                    <div class="ds-stat"><span class="ds-stat-value" id="dsSource">—</span><span class="ds-stat-label">Source File</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Input Section -->
+        <section class="card input-card" id="input-section">
+            <div class="card-header">
+                <h2>Job Description</h2>
+                <div class="sample-btns">
+                    <button type="button" class="btn-sm" onclick="loadSample('ai')">AI Engineer</button>
+                    <button type="button" class="btn-sm" onclick="loadSample('data')">Data Engineer</button>
+                    <button type="button" class="btn-sm" onclick="loadSample('pm')">Product Manager</button>
+                </div>
+            </div>
+            <form id="scoutForm">
+                <div class="job-builder">
+                    <div class="builder-title">Sample Job Input</div>
+                    <div class="job-grid">
+                        <label class="field">
+                            <span>Job Title</span>
+                            <input type="text" id="jobTitleInput" placeholder="Senior AI Engineer">
+                        </label>
+                        <label class="field">
+                            <span>Location</span>
+                            <input type="text" id="jobLocationInput" placeholder="Bangalore (Hybrid)">
+                        </label>
+                        <label class="field">
+                            <span>Experience Min</span>
+                            <input type="number" id="expMinInput" min="0" step="1" placeholder="3">
+                        </label>
+                        <label class="field">
+                            <span>Experience Max</span>
+                            <input type="number" id="expMaxInput" min="0" step="1" placeholder="6">
+                        </label>
+                        <label class="field">
+                            <span>Salary Min LPA</span>
+                            <input type="number" id="salaryMinInput" min="0" step="1" placeholder="15">
+                        </label>
+                        <label class="field">
+                            <span>Salary Max LPA</span>
+                            <input type="number" id="salaryMaxInput" min="0" step="1" placeholder="25">
+                        </label>
+                    </div>
+                    <label class="field field-wide">
+                        <span>Required Skills</span>
+                        <input type="text" id="requiredSkillsInput" placeholder="Python, LLMs, LangChain, RAG, Docker">
+                    </label>
+                    <label class="field field-wide">
+                        <span>Nice To Have</span>
+                        <input type="text" id="niceSkillsInput" placeholder="MLOps, model monitoring, open-source contributions">
+                    </label>
+                    <label class="field field-wide">
+                        <span>Responsibilities</span>
+                        <textarea id="responsibilitiesInput" rows="3" placeholder="Build AI-powered features, deploy models, collaborate with product and engineering teams"></textarea>
+                    </label>
+                    <div class="builder-actions">
+                        <button type="button" class="btn-sm" onclick="buildJobDescription()">Use Job Input</button>
+                        <span class="builder-hint">This fills the JD box below; the existing agent flow stays the same.</span>
+                    </div>
+                </div>
+                <textarea id="jdInput" name="jd_text" placeholder="Paste your job description here..."
+                    rows="10"></textarea>
+                <div class="job-builder new-job-builder">
+                    <div class="builder-title">New Job Input</div>
+                    <div class="job-grid">
+                        <label class="field">
+                            <span>Job Title</span>
+                            <input type="text" id="customJobTitleInput" placeholder="Backend Engineer">
+                        </label>
+                        <label class="field">
+                            <span>Location</span>
+                            <input type="text" id="customJobLocationInput" placeholder="Remote / Pune / Delhi">
+                        </label>
+                        <label class="field">
+                            <span>Experience Min</span>
+                            <input type="number" id="customExpMinInput" min="0" step="1" placeholder="2">
+                        </label>
+                        <label class="field">
+                            <span>Experience Max</span>
+                            <input type="number" id="customExpMaxInput" min="0" step="1" placeholder="5">
+                        </label>
+                        <label class="field">
+                            <span>Salary Min LPA</span>
+                            <input type="number" id="customSalaryMinInput" min="0" step="1" placeholder="10">
+                        </label>
+                        <label class="field">
+                            <span>Salary Max LPA</span>
+                            <input type="number" id="customSalaryMaxInput" min="0" step="1" placeholder="20">
+                        </label>
+                    </div>
+                    <label class="field field-wide">
+                        <span>Required Skills</span>
+                        <input type="text" id="customRequiredSkillsInput" placeholder="Python, Flask, PostgreSQL, AWS">
+                    </label>
+                    <label class="field field-wide">
+                        <span>Nice To Have</span>
+                        <input type="text" id="customNiceSkillsInput" placeholder="Docker, Kubernetes, Redis">
+                    </label>
+                    <label class="field field-wide">
+                        <span>Responsibilities</span>
+                        <textarea id="customResponsibilitiesInput" rows="3" placeholder="Build APIs, own backend services, improve system reliability"></textarea>
+                    </label>
+                    <div class="builder-actions">
+                        <button type="button" class="btn-sm" onclick="buildCustomJobDescription()">Use New Job Input</button>
+                        <span class="builder-hint">Use this for any new JD beyond the three sample roles.</span>
+                    </div>
+                </div>
+                <div class="form-footer">
+                    <span class="char-count" id="charCount">0 characters</span>
+                    <button type="submit" class="btn-primary" id="submitBtn">
+                        Run Agent
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Agent Trace Section (hidden initially) -->
+        <section class="card trace-card hidden" id="trace-section">
+            <div class="card-header">
+                <h2>Agent Reasoning Trace</h2>
+                <span class="live-badge" id="liveBadge">LIVE</span>
+            </div>
+            <div class="trace-timeline" id="traceTimeline"></div>
+        </section>
+
+        <!-- Results Section (hidden initially) -->
+        <div id="results-section" class="hidden">
+
+            <!-- Export Bar -->
+            <div class="export-bar" id="exportBar">
+                <span>Results ready — <strong id="exportCount">0</strong> candidates shortlisted</span>
+                <button class="btn-export" id="exportBtn" onclick="exportResults()">Export to Excel</button>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row" id="statsRow"></div>
+
+            <!-- Market Intelligence -->
+            <section class="card" id="marketIntel"></section>
+
+            <!-- Bias Analysis -->
+            <section class="card" id="biasAnalysis"></section>
+
+            <!-- Candidate Cards -->
+            <section id="candidateCards"></section>
+        </div>
+
+        <!-- Error Section -->
+        <section class="card error-card hidden" id="error-section">
+            <h3>Error</h3>
+            <p id="errorMessage"></p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Built with ReAct Agent Architecture &middot; Groq / Gemini / OpenRouter LLMs &middot; Semantic Matching &middot; Bias Detection
+        </p>
+    </footer>
+
+    <script>
+        // Sample JDs
+        const samples = {
+            ai: `Job Title: Senior AI Engineer\nLocation: Bangalore (Hybrid)\n\nAbout the Role:\nWe are looking for a Senior AI Engineer to join our core product team. You will build and deploy AI-powered features using LLMs and modern ML frameworks.\n\nRequirements:\n- 3+ years of experience in Python development\n- Strong experience with LLMs, LangChain, or similar frameworks\n- Experience building RAG systems and AI agents\n- Knowledge of vector databases (Pinecone, Chroma, Weaviate)\n- Familiarity with FastAPI or Django for building APIs\n- Docker and cloud deployment experience (AWS preferred)\n- B.Tech or higher in Computer Science or related field\n\nNice to Have:\n- Published research or open-source contributions\n- Experience with MLOps and model monitoring\n- Team leadership experience\n\nSalary Range: 15-25 LPA\nNotice Period: Preferably 30-45 days`,
+            data: `Job Title: Senior Data Engineer\nLocation: Hyderabad (Hybrid)\n\nAbout the Role:\nWe need a Senior Data Engineer to build and maintain our data infrastructure. You will design scalable data pipelines processing terabytes of data daily.\n\nRequirements:\n- 4+ years experience in data engineering\n- Expert in Python and SQL\n- Experience with Apache Spark, Airflow, or similar tools\n- Knowledge of cloud data services (AWS/GCP)\n- Experience with data warehousing (Snowflake, BigQuery, Redshift)\n- Strong understanding of data modeling and ETL best practices\n\nNice to Have:\n- Experience with real-time streaming (Kafka, Kinesis)\n- Knowledge of dbt or similar transformation tools\n- AWS/GCP certifications\n\nSalary Range: 18-30 LPA`,
+            pm: `Job Title: Senior Product Manager\nLocation: Mumbai (Remote-friendly)\n\nAbout the Role:\nWe're looking for a Senior Product Manager to lead our B2B SaaS product. You will define product strategy, work with engineering teams, and drive product-market fit.\n\nRequirements:\n- 5+ years of product management experience\n- Experience with B2B SaaS products\n- Strong analytical skills — SQL, data analysis, A/B testing\n- Excellent communication and stakeholder management\n- Experience with Agile/Scrum methodologies\n- Technical background preferred\n\nNice to Have:\n- MBA from a reputed institution\n- Experience with AI/ML products\n- Domain expertise in fintech or healthcare\n\nSalary Range: 25-40 LPA`
+        };
+
+        const sampleInputs = {
+            ai: {
+                title: 'Senior AI Engineer',
+                location: 'Bangalore (Hybrid)',
+                expMin: '3',
+                expMax: '6',
+                salaryMin: '15',
+                salaryMax: '25',
+                required: 'Python, LLMs, LangChain, RAG systems, AI agents, vector databases, FastAPI, Docker, AWS',
+                nice: 'MLOps, model monitoring, open-source contributions, team leadership',
+                responsibilities: 'Build and deploy AI-powered product features, design RAG systems and AI agents, collaborate with product and engineering teams'
+            },
+            data: {
+                title: 'Senior Data Engineer',
+                location: 'Hyderabad (Hybrid)',
+                expMin: '4',
+                expMax: '8',
+                salaryMin: '18',
+                salaryMax: '30',
+                required: 'Python, SQL, Apache Spark, Airflow, AWS, GCP, Snowflake, BigQuery, ETL',
+                nice: 'Kafka, Kinesis, dbt, AWS certifications, GCP certifications',
+                responsibilities: 'Design scalable data pipelines, maintain data infrastructure, process high-volume datasets, improve data warehouse reliability'
+            },
+            pm: {
+                title: 'Senior Product Manager',
+                location: 'Mumbai (Remote-friendly)',
+                expMin: '5',
+                expMax: '9',
+                salaryMin: '25',
+                salaryMax: '40',
+                required: 'Product management, B2B SaaS, SQL, data analysis, A/B testing, stakeholder management, Agile, Scrum',
+                nice: 'MBA, AI products, ML products, fintech domain, healthcare domain',
+                responsibilities: 'Define product strategy, work with engineering teams, prioritize roadmap, drive product-market fit'
+            }
+        };
+
+        function loadSample(type, notify = true) {
+            const sample = sampleInputs[type];
+            if (sample) {
+                document.getElementById('jobTitleInput').value = sample.title;
+                document.getElementById('jobLocationInput').value = sample.location;
+                document.getElementById('expMinInput').value = sample.expMin;
+                document.getElementById('expMaxInput').value = sample.expMax;
+                document.getElementById('salaryMinInput').value = sample.salaryMin;
+                document.getElementById('salaryMaxInput').value = sample.salaryMax;
+                document.getElementById('requiredSkillsInput').value = sample.required;
+                document.getElementById('niceSkillsInput').value = sample.nice;
+                document.getElementById('responsibilitiesInput').value = sample.responsibilities;
+            }
+            document.getElementById('jdInput').value = samples[type];
+            updateCharCount();
+            if (notify) {
+                showToast('Sample job loaded. You can edit it or run the agent directly.', 'success');
+            }
+        }
+
+        function splitList(value) {
+            return value.split(/[\n,]+/).map(item => item.trim()).filter(Boolean);
+        }
+
+        function bulletList(items) {
+            return items.length ? items.map(item => `- ${item}`).join('\n') : '- Not specified';
+        }
+
+        function composeJobDescription(fields) {
+            const experience = fields.expMin && fields.expMax
+                ? `${fields.expMin}-${fields.expMax} years`
+                : fields.expMin
+                    ? `${fields.expMin}+ years`
+                    : 'Not specified';
+            const salary = fields.salaryMin && fields.salaryMax
+                ? `${fields.salaryMin}-${fields.salaryMax} LPA`
+                : fields.salaryMax
+                    ? `Up to ${fields.salaryMax} LPA`
+                    : 'Not specified';
+
+            return `Job Title: ${fields.title}
+Location: ${fields.location || 'Remote'}
+
+About the Role:
+We are hiring for ${fields.title}. The candidate should be able to contribute strongly to the role requirements and work with the team to deliver business outcomes.
+
+Responsibilities:
+${bulletList(fields.responsibilities)}
+
+Requirements:
+- ${experience} of relevant experience
+${bulletList(fields.requiredSkills)}
+
+Nice to Have:
+${bulletList(fields.niceSkills)}
+
+Salary Range: ${salary}`;
+        }
+
+        function buildJobDescription() {
+            const title = document.getElementById('jobTitleInput').value.trim();
+            const location = document.getElementById('jobLocationInput').value.trim();
+            const expMin = document.getElementById('expMinInput').value.trim();
+            const expMax = document.getElementById('expMaxInput').value.trim();
+            const salaryMin = document.getElementById('salaryMinInput').value.trim();
+            const salaryMax = document.getElementById('salaryMaxInput').value.trim();
+            const requiredSkills = splitList(document.getElementById('requiredSkillsInput').value);
+            const niceSkills = splitList(document.getElementById('niceSkillsInput').value);
+            const responsibilities = splitList(document.getElementById('responsibilitiesInput').value);
+
+            if (!title || !requiredSkills.length) {
+                showError('Please enter at least a job title and one required skill.');
+                return '';
+            }
+
+            const jdText = composeJobDescription({
+                title, location, expMin, expMax, salaryMin, salaryMax,
+                requiredSkills, niceSkills, responsibilities
+            });
+
+            jdInput.value = jdText;
+            updateCharCount();
+            showToast('Job input added to the JD box.', 'success');
+            return jdText;
+        }
+
+        function buildCustomJobDescription() {
+            const title = document.getElementById('customJobTitleInput').value.trim();
+            const location = document.getElementById('customJobLocationInput').value.trim();
+            const expMin = document.getElementById('customExpMinInput').value.trim();
+            const expMax = document.getElementById('customExpMaxInput').value.trim();
+            const salaryMin = document.getElementById('customSalaryMinInput').value.trim();
+            const salaryMax = document.getElementById('customSalaryMaxInput').value.trim();
+            const requiredSkills = splitList(document.getElementById('customRequiredSkillsInput').value);
+            const niceSkills = splitList(document.getElementById('customNiceSkillsInput').value);
+            const responsibilities = splitList(document.getElementById('customResponsibilitiesInput').value);
+
+            if (!title || !requiredSkills.length) {
+                showError('Please enter at least a new job title and one required skill.');
+                return '';
+            }
+
+            const jdText = composeJobDescription({
+                title, location, expMin, expMax, salaryMin, salaryMax,
+                requiredSkills, niceSkills, responsibilities
+            });
+
+            jdInput.value = jdText;
+            updateCharCount();
+            showToast('New job input added to the JD box.', 'success');
+            return jdText;
+        }
+
+        // Character counter
+        const jdInput = document.getElementById('jdInput');
+        jdInput.addEventListener('input', updateCharCount);
+        function updateCharCount() {
+            document.getElementById('charCount').textContent = jdInput.value.length + ' characters';
+        }
+
+        // Form submission
+        document.getElementById('scoutForm').onsubmit = async (e) => {
+            e.preventDefault();
+            let jdText = jdInput.value.trim();
+            const hasCustomJob = document.getElementById('customJobTitleInput').value.trim()
+                && document.getElementById('customRequiredSkillsInput').value.trim();
+            if (hasCustomJob) {
+                jdText = buildCustomJobDescription().trim();
+            }
+            const hasStructuredJob = document.getElementById('jobTitleInput').value.trim()
+                && document.getElementById('requiredSkillsInput').value.trim();
+            if (jdText.length < 50 && hasStructuredJob) {
+                jdText = buildJobDescription().trim();
+            }
+            if (jdText.length < 50) {
+                showError('Job Description too short. Please provide at least 50 characters.');
+                return;
+            }
+
+            // Show trace, hide results
+            document.getElementById('trace-section').classList.remove('hidden');
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('error-section').classList.add('hidden');
+            document.getElementById('traceTimeline').innerHTML = '';
+            document.getElementById('liveBadge').style.display = 'inline-flex';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').innerHTML = '<span class="spinner"></span> Running...';
+
+            // Scroll to trace
+            document.getElementById('trace-section').scrollIntoView({ behavior: 'smooth' });
+
+            try {
+                // Try SSE first
+                const formData = new FormData();
+                formData.append('jd_text', jdText);
+
+                const response = await fetch('/scout/stream', { method: 'POST', body: formData });
+
+                if (response.headers.get('content-type')?.includes('text/event-stream')) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const msg = JSON.parse(line.slice(6));
+                                    handleSSEMessage(msg);
+                                } catch (e) { /* skip malformed */ }
+                            }
+                        }
+                    }
+                } else {
+                    // Fallback: regular POST
+                    const fallbackRes = await fetch('/scout', { method: 'POST', body: formData });
+                    const data = await fallbackRes.json();
+                    if (data.error) {
+                        showError(data.error);
+                    } else {
+                        renderResults(data);
+                    }
+                }
+            } catch (err) {
+                showError('Network error: ' + err.message);
+            } finally {
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitBtn').innerHTML = 'Run Agent';
+                document.getElementById('liveBadge').style.display = 'none';
+            }
+        };
+
+        function handleSSEMessage(msg) {
+            if (msg.type === 'step') {
+                addTraceStep(msg);
+            } else if (msg.type === 'result') {
+                renderResults(msg.data);
+            } else if (msg.type === 'error') {
+                showError(msg.message);
+            }
+        }
+
+        function addTraceStep(step) {
+            const icons = { think: 'T', act: 'A', observe: 'O', decide: 'D' };
+            const colors = { think: 'trace-think', act: 'trace-act', observe: 'trace-observe', decide: 'trace-decide' };
+
+            const el = document.createElement('div');
+            el.className = `trace-step ${colors[step.phase] || ''} fade-in`;
+            el.innerHTML = `
+                <span class="trace-icon">${icons[step.phase] || '•'}</span>
+                <div class="trace-content">
+                    <span class="trace-phase">${step.phase.toUpperCase()}</span>
+                    <span class="trace-detail">${step.detail}</span>
+                </div>
+            `;
+            document.getElementById('traceTimeline').appendChild(el);
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showError(message) {
+            showToast(message, 'error');
+            document.getElementById('error-section').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('toast-hide'), 4500);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function renderResults(data) {
+            document.getElementById('results-section').classList.remove('hidden');
+
+            // Stats row
+            const stats = data.summary || {};
+            document.getElementById('statsRow').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${data.total_candidates_considered || 0}</div>
+                    <div class="stat-label">Evaluated</div>
+                </div>
+                <div class="stat-card priority-glow">
+                    <div class="stat-value">${stats.priority_hires || 0}</div>
+                    <div class="stat-label">Priority Hires</div>
+                </div>
+                <div class="stat-card fasttrack-glow">
+                    <div class="stat-value">${stats.fast_track || 0}</div>
+                    <div class="stat-label">Fast-Track</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.recommended || 0}</div>
+                    <div class="stat-label">Recommended</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${data.total_duration_seconds || '—'}s</div>
+                    <div class="stat-label">Agent Time</div>
+                </div>
+            `;
+
+            // Market Intelligence
+            const mi = data.market_intelligence || {};
+            if (mi.hiring_difficulty) {
+                document.getElementById('marketIntel').innerHTML = `
+                    <div class="card-header"><h2>Market Intelligence</h2></div>
+                    <div class="intel-grid">
+                        <div class="intel-item"><span class="intel-label">Hiring Difficulty</span><span class="intel-value">${mi.hiring_difficulty}</span></div>
+                        <div class="intel-item"><span class="intel-label">Talent Supply</span><span class="intel-value">${mi.talent_supply}</span></div>
+                        <div class="intel-item"><span class="intel-label">Market Salary</span><span class="intel-value">${mi.salary_benchmark?.market_range || 'N/A'}</span></div>
+                        <div class="intel-item"><span class="intel-label">Salary Assessment</span><span class="intel-value">${mi.salary_benchmark?.assessment || 'N/A'}</span></div>
+                        <div class="intel-item"><span class="intel-label">Est. Time to Hire</span><span class="intel-value">${mi.estimated_time_to_hire || 'N/A'}</span></div>
+                    </div>
+                    ${mi.recommendations ? '<div class="recs"><h4>Recommendations</h4><ul>' + mi.recommendations.map(r => '<li>' + r + '</li>').join('') + '</ul></div>' : ''}
+                `;
+                document.getElementById('marketIntel').classList.remove('hidden');
+            }
+
+            // Bias Analysis
+            const ba = data.bias_analysis || {};
+            if (ba.fairness_score !== undefined) {
+                const scoreClass = ba.fairness_score >= 80 ? 'score-good' : ba.fairness_score >= 50 ? 'score-warn' : 'score-bad';
+                document.getElementById('biasAnalysis').innerHTML = `
+                    <div class="card-header"><h2>Bias & Fairness Analysis</h2><span class="fairness-score ${scoreClass}">${ba.fairness_score}/100</span></div>
+                    <p>${ba.summary || 'No issues found.'}</p>
+                    ${ba.issues?.length ? '<div class="bias-issues">' + ba.issues.map(i => `<div class="bias-issue bias-${i.severity}"><strong>${i.term}</strong> — ${i.suggestion}</div>`).join('') + '</div>' : ''}
+                    ${ba.suggestions?.length ? '<div class="bias-suggestions">' + ba.suggestions.map(s => `<div class="bias-suggestion">${s}</div>`).join('') + '</div>' : ''}
+                `;
+                document.getElementById('biasAnalysis').classList.remove('hidden');
+            }
+
+            // Candidate Cards
+            const cardsHtml = (data.candidates || []).map(c => {
+                const tierClass = c.combined_score >= 85 ? 'tier-priority' : c.combined_score >= 75 ? 'tier-fasttrack' : c.combined_score >= 65 ? 'tier-recommended' : 'tier-backup';
+                const scoreClass = c.combined_score >= 85 ? 'score-high' : c.combined_score >= 65 ? 'score-mid' : 'score-low';
+
+                const matchedSkills = (c.skill_breakdown?.matched_skills || []).slice(0, 6).map(s => `<span class="tag tag-match">${s}</span>`).join('');
+                const missingSkills = (c.skill_breakdown?.missing_skills || []).slice(0, 4).map(s => `<span class="tag tag-miss">${s}</span>`).join('');
+
+                // Conversation transcript
+                let convHtml = '';
+                if (c.conversation_transcript?.length) {
+                    convHtml = `<div class="conv-section">
+                        <h4 class="conv-toggle" onclick="this.parentElement.classList.toggle('open')">Conversation Transcript <span class="toggle-icon">▸</span></h4>
+                        <div class="conv-messages">
+                            ${c.conversation_transcript.map(t => `
+                                <div class="conv-msg conv-${t.speaker}">
+                                    <span class="conv-speaker">${t.speaker === 'recruiter' ? 'Recruiter' : 'Candidate'}</span>
+                                    <p>${t.message}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+                }
+
+                // Factor breakdown bars
+                const fb = c.factor_breakdown || {};
+                const factorBars = ['skills', 'experience', 'salary', 'location'].map(f => {
+                    const d = fb[f] || {};
+                    return `<div class="factor-row">
+                        <span class="factor-name">${f.charAt(0).toUpperCase() + f.slice(1)}</span>
+                        <div class="factor-bar"><div class="factor-fill" style="width:${d.percentage || 0}%"></div></div>
+                        <span class="factor-score">${d.score || 0}/${d.max || 0}</span>
+                    </div>`;
+                }).join('');
+
+                return `
+                <div class="candidate-card ${tierClass} fade-in">
+                    <div class="cand-header">
+                        <div class="cand-rank">#${c.rank}</div>
+                        <div class="cand-info">
+                            <h3 class="cand-name">${c.candidate_name}</h3>
+                            <p class="cand-rec">${c.recommendation}</p>
+                        </div>
+                        <div class="cand-score ${scoreClass}">${c.combined_score}<span class="score-max">/100</span></div>
+                    </div>
+
+                    <div class="score-pills">
+                        <span class="pill">Match: ${c.match_score}</span>
+                        <span class="pill">Interest: ${c.interest_score}</span>
+                        <span class="pill">${c.availability_timeline}</span>
+                    </div>
+
+                    <div class="cand-details">
+                        <div class="detail-col">
+                            <h4>Match Breakdown</h4>
+                            ${factorBars}
+                        </div>
+                        <div class="detail-col">
+                            <h4>Skills</h4>
+                            <div class="tags-wrap">${matchedSkills}${missingSkills}</div>
+                            <h4 style="margin-top:12px">Signals</h4>
+                            <div class="signals">
+                                ${(c.enthusiasm_signals || []).slice(0, 3).map(s => `<div class="signal signal-pos">${s}</div>`).join('')}
+                                ${(c.concerns || []).slice(0, 2).map(s => `<div class="signal signal-neg">${s}</div>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${convHtml}
+
+                    <div class="action-box">
+                        <span class="action-label">RECRUITER ACTION</span>
+                        <span class="action-text">${c.combined_score >= 85 ? 'Send offer discussion invite — Within 24hrs' : c.combined_score >= 75 ? 'Schedule technical interview — This week' : c.combined_score >= 65 ? 'Send culture-fit interview invite — Next week' : 'Keep warm — Reach out in 2 weeks'}</span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('candidateCards').innerHTML = cardsHtml;
+            document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Load default sample
+        loadSample('ai', false);
+
+        // ─── Dataset Management ───
+        let _lastResultsData = null;
+
+        // Load dataset stats on page load
+        async function loadDatasetStats() {
+            try {
+                const res = await fetch('/dataset/info');
+                const stats = await res.json();
+                if (!stats.error) {
+                    document.getElementById('dsTotal').textContent = stats.total_candidates_in_pool || '—';
+                    document.getElementById('dsLocations').textContent = (stats.locations || []).length || '—';
+                    document.getElementById('dsAvgExp').textContent = stats.avg_experience || '—';
+                    document.getElementById('dsSource').textContent = stats.file_name || stats.source_file || '—';
+                }
+            } catch(e) { console.warn('Could not load dataset stats', e); }
+        }
+        loadDatasetStats();
+
+        // File upload via drag-and-drop and click
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('datasetFileInput');
+
+        ['dragenter', 'dragover'].forEach(e => {
+            dropzone.addEventListener(e, (ev) => { ev.preventDefault(); dropzone.classList.add('dragover'); });
+        });
+        ['dragleave', 'drop'].forEach(e => {
+            dropzone.addEventListener(e, (ev) => { ev.preventDefault(); dropzone.classList.remove('dragover'); });
+        });
+        dropzone.addEventListener('drop', (ev) => {
+            const files = ev.dataTransfer.files;
+            if (files.length) uploadDataset(files[0]);
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) uploadDataset(fileInput.files[0]);
+        });
+
+        async function uploadDataset(file) {
+            document.getElementById('dropzoneContent').classList.add('hidden');
+            document.getElementById('dropzoneUploading').classList.remove('hidden');
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const res = await fetch('/dataset/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showToast(data.message || 'Dataset uploaded successfully.', 'success');
+                    document.getElementById('dsTotal').textContent = data.total_candidates_in_pool || '—';
+                    document.getElementById('dsLocations').textContent = (data.locations || []).length || '—';
+                    document.getElementById('dsAvgExp').textContent = data.avg_experience || '—';
+                    document.getElementById('dsSource').textContent = data.file_name || '—';
+                }
+            } catch(e) { showError('Upload failed: ' + e.message); }
+            document.getElementById('dropzoneContent').classList.remove('hidden');
+            document.getElementById('dropzoneUploading').classList.add('hidden');
+            fileInput.value = '';
+        }
+
+        async function resetDataset() {
+            try {
+                const res = await fetch('/dataset/reset', { method: 'POST' });
+                const data = await res.json();
+                if (!data.error) {
+                    document.getElementById('dsTotal').textContent = data.total_candidates_in_pool || '—';
+                    document.getElementById('dsLocations').textContent = (data.locations || []).length || '—';
+                    document.getElementById('dsAvgExp').textContent = data.avg_experience || '—';
+                    document.getElementById('dsSource').textContent = data.source_file || '—';
+                }
+            } catch(e) { console.warn('Reset failed', e); }
+        }
+
+        // ─── Export Results ───
+        async function exportResults() {
+            if (!_lastResultsData) return;
+            const btn = document.getElementById('exportBtn');
+            btn.disabled = true;
+            btn.textContent = 'Exporting...';
+            try {
+                const res = await fetch('/export-results', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(_lastResultsData)
+                });
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'talent_shortlist.xlsx';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const err = await res.json();
+                    showError(err.error || 'Export failed');
+                }
+            } catch(e) { showError('Export failed: ' + e.message); }
+            btn.disabled = false;
+            btn.textContent = 'Export to Excel';
+        }
+
+        // Patch renderResults to store data for export
+        const _origRenderResults = renderResults;
+        renderResults = function(data) {
+            _lastResultsData = data;
+            document.getElementById('exportCount').textContent = (data.candidates || []).length;
+            _origRenderResults(data);
+        };
+
+        // ─── Theme Toggle ───
+        (function() {
+            const toggle = document.getElementById('themeToggle');
+            const label = document.getElementById('themeLabel');
+            function isDark() {
+                return document.documentElement.getAttribute('data-theme') === 'dark';
+            }
+            function updateLabel() {
+                label.textContent = isDark() ? 'Light' : 'Dark';
+            }
+            updateLabel();
+            toggle.addEventListener('click', function() {
+                if (isDark()) {
+                    document.documentElement.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                }
+                updateLabel();
+            });
+            toggle.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggle.click();
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

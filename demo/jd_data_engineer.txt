@@ -1,0 +1,23 @@
+Job Title: Senior Data Engineer
+
+Location: Hyderabad
+
+About the Role:
+We need a Senior Data Engineer to build and maintain our data pipeline infrastructure. You will work with large-scale datasets and ensure data quality across the organization.
+
+Requirements:
+- 4+ years of experience in data engineering
+- Strong SQL and Python skills
+- Experience with Apache Spark, Airflow, or similar data orchestration tools
+- Cloud data platforms: AWS Redshift, Google BigQuery, or Snowflake
+- Data modeling and warehouse design experience
+- ETL/ELT pipeline development
+- Bachelor's degree in CS, Engineering, or related field
+
+Nice to Have:
+- Experience with dbt or similar transformation tools
+- Real-time streaming experience (Kafka, Flink)
+- Data governance and compliance knowledge
+
+Salary Range: 18-28 LPA
+Notice Period: 30-60 days preferred
