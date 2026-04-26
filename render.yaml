@@ -3,7 +3,7 @@ services:
     name: talent-scout-agent
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --worker-class gthread --threads 4 app:app
+    startCommand: gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 --worker-class gthread --threads 4 app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
