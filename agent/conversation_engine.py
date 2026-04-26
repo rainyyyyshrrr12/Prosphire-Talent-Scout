@@ -175,12 +175,12 @@ Bio: {candidate['bio']}"""
             f"{'Recruiter' if t.speaker == 'recruiter' else 'Candidate'}: {t.message}"
             for t in history
         )
+        hist_section = f"Previous conversation:\n{hist_text}\n" if hist_text else ""
 
         system = f"""You are a professional tech recruiter. You are reaching out to a candidate about a role.
 {context}
 
-{'Previous conversation:\\n' + hist_text if hist_text else ''}
-
+{hist_section}
 Generate ONLY the recruiter's message. No labels, no quotes, just the message text."""
 
         response = self.llm.generate([
