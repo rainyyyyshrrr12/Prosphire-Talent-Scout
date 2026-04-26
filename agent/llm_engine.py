@@ -143,12 +143,12 @@ class FreeLLMEngine:
             ("openrouter", "OpenRouter", self._try_openrouter),
         ]
 
-        for provider_key, provider_name, provider_func in providers:
-            if not self.keys.get(provider_key):
-                self._mark_failure(provider_name, f"API key is not configured")
-                continue
+        for attempt in range(retries + 1):
+            for provider_key, provider_name, provider_func in providers:
+                if not self.keys.get(provider_key):
+                    self._mark_failure(provider_name, f"API key is not configured")
+                    continue
 
-            for attempt in range(retries + 1):
                 print(f"Trying {provider_name} (attempt {attempt + 1})...")
 
                 result = provider_func(messages, temperature)
@@ -156,10 +156,10 @@ class FreeLLMEngine:
                     print(f"Success with {provider_name}!")
                     return result
 
-                if attempt < retries:
-                    sleep_time = 5 * (2 ** attempt)
-                    print(f"Rate limited or failed. Sleeping for {sleep_time}s before retry...")
-                    time.sleep(sleep_time)
+            if attempt < retries:
+                sleep_time = 2 * (2 ** attempt)
+                print(f"All providers failed on attempt {attempt + 1}. Sleeping for {sleep_time}s before next round...")
+                time.sleep(sleep_time)
 
         error_details = "; ".join(
             f"{provider_name}: {self.provider_errors.get(provider_name, 'no response')}"
