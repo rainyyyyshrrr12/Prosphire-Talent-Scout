@@ -24,7 +24,7 @@ load_dotenv()
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
-# ─── Config ───────────────────────────────────────────────────────────────────
+# â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -37,13 +37,16 @@ _active_dataset_path = None
 
 
 def _get_active_dataset_path():
-    """Get the active dataset file path. Prefers uploaded file, then xlsx, then json."""
+    """Get the active dataset path without starting Spark during web requests."""
     global _active_dataset_path
     if _active_dataset_path and os.path.exists(_active_dataset_path):
         return _active_dataset_path
     
+    processed_path = os.path.join(DATA_DIR, "processed", "candidates.json")
     xlsx_path = os.path.join(DATA_DIR, "candidates.xlsx")
     json_path = os.path.join(DATA_DIR, "candidates.json")
+    if os.path.exists(processed_path):
+        return processed_path
     if os.path.exists(xlsx_path):
         return xlsx_path
     return json_path
@@ -56,7 +59,7 @@ def index():
 
 @app.route("/scout", methods=["POST"])
 def scout():
-    """Main API endpoint — runs the full agent pipeline."""
+    """Main API endpoint â€” runs the full agent pipeline."""
     try:
         jd_text = request.form.get("jd_text", "").strip()
 
@@ -93,7 +96,7 @@ def scout():
 
 @app.route("/scout/stream", methods=["POST"])
 def scout_stream():
-    """SSE endpoint — streams agent progress in real-time."""
+    """SSE endpoint â€” streams agent progress in real-time."""
     jd_text = request.form.get("jd_text", "").strip()
 
     if len(jd_text) < 50:
@@ -157,7 +160,7 @@ def scout_stream():
     return Response(stream_with_context(event_stream()), mimetype="text/event-stream")
 
 
-# ─── Dataset Management Endpoints ────────────────────────────────────────────
+# â”€â”€â”€ Dataset Management Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.route("/dataset/info", methods=["GET"])
 def dataset_info():
@@ -277,7 +280,7 @@ def export_results():
 
         wb = Workbook()
 
-        # ─── Sheet 1: Shortlisted Candidates ───
+        # â”€â”€â”€ Sheet 1: Shortlisted Candidates â”€â”€â”€
         ws = wb.active
         ws.title = "Shortlisted Candidates"
 
@@ -351,7 +354,7 @@ def export_results():
 
         ws.freeze_panes = "A2"
 
-        # ─── Sheet 2: Summary ───
+        # â”€â”€â”€ Sheet 2: Summary â”€â”€â”€
         ws2 = wb.create_sheet("Summary")
         summary = data.get("summary", {})
         summary_rows = [

@@ -233,3 +233,60 @@ talent-scout-agent/
 ## 📝 License
 
 MIT License.
+
+---
+
+## Data Engineering Pipeline (Local PySpark)
+
+This project includes an offline, local-only PySpark ETL pipeline for candidate data. It does not alter the ReAct agent, matching, scoring, ranking, or web request flow.
+
+```text
+Excel / JSON / CSV
+        ↓
+Python / PySpark Ingestion
+        ↓
+PySpark DataFrame
+        ↓
+Cleaning + Validation + Transformation
+        ↓
+Parquet
+        ↓
+Python Adapter
+        ↓
+Existing AI Agent
+        ↓
+Matching + Ranking
+```
+
+### What it processes
+
+- Excel is read with OpenPyXL and converted into a Spark DataFrame because Spark does not read `.xlsx` natively.
+- JSON and CSV are read with Spark's native readers.
+- The pipeline normalizes known column names, trims text, converts numeric experience/salary/notice fields, normalizes skills into lowercase arrays, reports empty core fields and duplicate IDs, and writes one record per candidate ID.
+- It writes Parquet to `data/processed/candidates_parquet/` and a normalized JSON adapter to `data/processed/candidates.json`.
+
+The JSON adapter keeps the existing agent boundary unchanged: `CandidateDiscovery` receives its normal `list[dict]` data. Spark is never started for a Flask request. Before the ETL has been run, the app continues to use the current Excel/JSON sources.
+
+### Run locally
+
+Install dependencies (Java 17+ is required by PySpark):
+
+```bash
+python -m pip install -r requirements.txt
+python -m data_pipeline.spark_pipeline
+```
+
+Optional sources can be supplied explicitly:
+
+```bash
+python -m data_pipeline.spark_pipeline --input data/candidates.json
+python -m data_pipeline.spark_pipeline --input data/candidates.csv
+```
+
+Then run the existing web app as usual:
+
+```bash
+python app.py
+```
+
+The pipeline is intentionally an offline command. Re-run it after replacing the default source data; uploaded Excel files continue to be used directly by the existing UI and do not trigger Spark automatically.

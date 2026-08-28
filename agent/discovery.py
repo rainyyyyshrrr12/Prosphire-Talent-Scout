@@ -99,10 +99,14 @@ class CandidateDiscovery:
 
     def __init__(self, pool_path: str = None):
         if pool_path is None:
-            # Prefer Excel over JSON
+            # Prefer the offline Spark adapter when it exists. Spark itself is
+            # never started here; Excel/JSON remain the safe fallback sources.
+            processed_path = os.path.join(_PROJECT_ROOT, "data", "processed", "candidates.json")
             xlsx_path = os.path.join(_PROJECT_ROOT, "data", "candidates.xlsx")
             json_path = os.path.join(_PROJECT_ROOT, "data", "candidates.json")
-            if os.path.exists(xlsx_path):
+            if os.path.exists(processed_path):
+                pool_path = processed_path
+            elif os.path.exists(xlsx_path):
                 pool_path = xlsx_path
             else:
                 pool_path = json_path
