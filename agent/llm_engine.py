@@ -24,13 +24,19 @@ class FreeLLMEngine:
         }
 
         self.models = {
-            "groq": primary_model or "llama-3.1-8b-instant",
+            # llama-3.1-8b-instant was retired for free/developer accounts in
+            # August 2026. Keep model choices configurable without code edits.
+            "groq": primary_model or os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"),
             "google": "gemini-2.5-flash",
-            "openrouter": "google/gemini-2.0-flash-lite-preview-02-05:free",
+            # The router always selects a currently available free model.
+            "openrouter": os.getenv("OPENROUTER_MODEL", "openrouter/free"),
         }
 
         self.last_provider = None
         self.provider_errors = {}
+        # Avoid repeating a timed-out provider request for every candidate in
+        # one agent run.
+        self.unavailable_providers = set()
 
     def _mark_failure(self, provider: str, error: str):
         self.provider_errors[provider] = error
@@ -135,7 +141,7 @@ class FreeLLMEngine:
             self._mark_failure("OpenRouter", str(e))
             return None
 
-    def generate(self, messages: List[Dict], temperature: float = 0.7, retries: int = 3) -> str:
+    def generate(self, messages: List[Dict], temperature: float = 0.7, retries: int = 1) -> str:
         self.provider_errors = {}
         providers = [
             ("groq", "Groq", self._try_groq),
@@ -143,11 +149,22 @@ class FreeLLMEngine:
             ("openrouter", "OpenRouter", self._try_openrouter),
         ]
 
+        configured_providers = [provider for provider in providers if self.keys.get(provider[0])]
+        if not configured_providers:
+            raise RuntimeError(
+                "No LLM provider is configured. Set GROQ_API_KEY, GOOGLE_API_KEY, "
+                "or OPENROUTER_API_KEY."
+            )
+
+        available_providers = [
+            provider for provider in configured_providers
+            if provider[0] not in self.unavailable_providers
+        ]
+        if not available_providers:
+            raise RuntimeError("Configured LLM providers are unavailable for this run.")
+
         for attempt in range(retries + 1):
-            for provider_key, provider_name, provider_func in providers:
-                if not self.keys.get(provider_key):
-                    self._mark_failure(provider_name, f"API key is not configured")
-                    continue
+            for provider_key, provider_name, provider_func in available_providers:
 
                 print(f"Trying {provider_name} (attempt {attempt + 1})...")
 
@@ -155,8 +172,13 @@ class FreeLLMEngine:
                 if result:
                     print(f"Success with {provider_name}!")
                     return result
+                self.unavailable_providers.add(provider_key)
 
-            if attempt < retries:
+            available_providers = [
+                provider for provider in available_providers
+                if provider[0] not in self.unavailable_providers
+            ]
+            if attempt < retries and available_providers:
                 sleep_time = 2 * (2 ** attempt)
                 print(f"All providers failed on attempt {attempt + 1}. Sleeping for {sleep_time}s before next round...")
                 time.sleep(sleep_time)

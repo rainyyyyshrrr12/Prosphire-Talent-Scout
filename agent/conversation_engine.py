@@ -36,6 +36,49 @@ class ConversationEngine:
         context = self._build_context(candidate, jd)
         persona = self._generate_persona(candidate, jd)
 
+        # Generate the entire structured dialogue at once. Previously every
+        # turn made a separate blocking remote request (six per candidate).
+        # A ten-person shortlist therefore waited on 60 sequential requests.
+        try:
+            prompt = f"""Create a realistic recruiter-candidate conversation using this context:
+{context}
+
+Candidate persona: {persona}
+
+Return ONLY a JSON array with exactly these six objects, in order:
+1 recruiter / intro (under 50 words; personalized introduction)
+2 candidate / initial_response (under 50 words; show level of interest)
+3 recruiter / deep_dive (under 40 words; ask a technical question)
+4 candidate / technical_response (under 60 words; give a concrete example)
+5 recruiter / availability_probe (under 40 words; ask notice period, salary, and fit)
+6 candidate / commitment_signal (under 60 words; realistic availability and interest)
+
+Each object must have only: speaker, intent, message."""
+            response = self.llm.generate([
+                {"role": "system", "content": "You are a professional tech recruiter and candidate roleplaying a concise, natural hiring conversation. Return valid JSON only."},
+                {"role": "user", "content": prompt},
+            ], temperature=0.7)
+            start, end = response.find("["), response.rfind("]") + 1
+            turns_json = response[start:end] if start >= 0 and end > start else response
+            turns = json.loads(turns_json)
+            expected = [
+                ("recruiter", "intro"), ("candidate", "initial_response"),
+                ("recruiter", "deep_dive"), ("candidate", "technical_response"),
+                ("recruiter", "availability_probe"), ("candidate", "commitment_signal"),
+            ]
+            if not isinstance(turns, list) or len(turns) != len(expected):
+                raise ValueError("LLM returned an invalid conversation structure")
+
+            for turn_number, (turn, (speaker, intent)) in enumerate(zip(turns, expected), 1):
+                message = str(turn.get("message", "")).strip()
+                if not message:
+                    raise ValueError("LLM returned an empty conversation message")
+                conversation.append(ConversationTurn(turn_number, speaker, message, intent))
+            return conversation
+        except Exception as e:
+            print(f"Conversation LLM fallback used for {candidate.get('name', 'candidate')}: {e}")
+            return self._generate_fallback_conversation(candidate, jd)
+
         # Turn structure with intents
         turns = [
             (1, "recruiter", "intro",
