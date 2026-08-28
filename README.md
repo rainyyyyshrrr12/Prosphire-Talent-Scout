@@ -1,357 +1,539 @@
-🎯 AI Talent Scout — Autonomous Recruitment Agent
+[AI_Talent_Scout_README_Professional.md](https://github.com/user-attachments/files/31552490/AI_Talent_Scout_README_Professional.md)
+# AI Talent Scout — Autonomous Recruitment Agent
 
-<div align="center">
-  <em>An autonomous ReAct-based AI agent that transforms recruitment from manual searching to intelligent, automated talent scouting.</em>
-</div>
-<br>
+> An autonomous AI-powered recruitment assistant that transforms a Job Description into a ranked, recruiter-ready candidate shortlist using agentic reasoning, semantic matching, simulated candidate conversations, and a local PySpark data pipeline.
 
-An autonomous AI agent that takes a Job Description as input, discovers matching candidates from a dynamic talent pool, engages them through simulated conversations, and outputs a ranked shortlist scored on Match Score and Interest Score — ready for recruiters to act on immediately.
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-Web%20App-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![PySpark](https://img.shields.io/badge/PySpark-ETL-E25A1C?logo=apachespark&logoColor=white)](https://spark.apache.org/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-Built with a ReAct (Reason-Act-Observe) agentic architecture — the agent autonomously plans, makes decisions, adjusts thresholds, and produces a full reasoning trace.
+**Live Demo:** https://prosphire-talent-scout.onrender.com/  
+**Repository:** https://github.com/rainyyyyshrrr12/Prosphire-Talent-Scout
 
+---
 
+## Overview
 
+AI Talent Scout is an autonomous recruitment system designed to reduce the manual effort involved in screening and evaluating candidates.
 
+The system accepts a Job Description and a candidate pool, analyzes the hiring requirements, discovers relevant candidates, evaluates their technical and contextual fit, simulates candidate interactions, and produces a final ranked shortlist.
 
-🏆 Why This Project Stands Out (Hackathon Approach)
+Unlike a simple keyword-matching system, the project uses a **ReAct (Reason–Act–Observe) architecture** to coordinate multiple recruitment tasks and dynamically make decisions during the scouting process.
 
-Our approach focuses on autonomy, scalability, and fairness, moving beyond simple keyword matching to create a truly intelligent recruitment assistant.
+The project also includes a **local PySpark ETL pipeline** that cleans, validates, transforms, and stores candidate data in Parquet before it reaches the AI layer.
 
-True Agentic Autonomy (ReAct): Instead of linear prompt chains, the agent uses a Reason-Act-Observe loop. It dynamically adjusts search thresholds, handles edge cases, and provides a transparent "thought process" (reasoning trace) in real-time.
+---
 
-Dual-Dimensional Scoring: We evaluate not just capability (Match Score via semantic skill matching) but also willingness (Interest Score via persona-based simulated conversations), mirroring a real recruiter's evaluation.
+## Key Capabilities
 
-Enterprise-Ready Data Integration: Seamlessly integrates with Excel (.xlsx) for dynamic candidate pool management. Users can upload custom datasets, view stats, and export AI-ranked results instantly.
+| Capability | Description |
+|---|---|
+| **Autonomous ReAct Agent** | Coordinates recruitment tasks through a Reason–Act–Observe workflow. |
+| **JD Analysis** | Extracts structured requirements from natural-language job descriptions. |
+| **Candidate Discovery** | Searches the available candidate pool for relevant profiles. |
+| **Semantic Matching** | Goes beyond exact keywords using synonym and fuzzy matching. |
+| **Multi-Factor Scoring** | Evaluates skills, experience, salary, and location compatibility. |
+| **Candidate Conversation** | Simulates multi-turn conversations to estimate candidate interest. |
+| **Interest Scoring** | Evaluates enthusiasm, engagement, and commitment signals. |
+| **Bias Detection** | Identifies potentially exclusionary language in job descriptions. |
+| **Market Intelligence** | Provides salary and hiring-difficulty insights. |
+| **Data Engineering Pipeline** | Uses PySpark for local candidate-data ingestion, cleaning, validation, and transformation. |
+| **Parquet Storage** | Stores normalized candidate data in an analytics-friendly columnar format. |
+| **Excel Integration** | Supports `.xlsx` candidate pools and custom uploads. |
+| **Real-Time UI** | Streams agent execution updates through Server-Sent Events (SSE). |
+| **Exportable Results** | Produces recruiter-ready ranked outputs. |
 
-Ethical AI & Market Intelligence: Built-in Bias Detection scans job descriptions for exclusionary language, while Market Intelligence provides salary benchmarks and hiring difficulty ratings.
+---
 
-Premium Developer & User Experience: A highly polished, Material Design-inspired UI with Dark/Light mode, glassmorphic elements, and real-time Server-Sent Events (SSE) streaming of the agent's thought process.
+## System Architecture
 
-🏗️ System Architecture
+```mermaid
+flowchart TD
+    U[Recruiter] --> UI[Flask Web Interface]
 
-graph TD
-    User((User)) -->|Input JD & Upload Excel| WebUI[Web Interface / Flask]
-    
-    subgraph Frontend [Premium UI]
-    WebUI
-    SSE[SSE Stream / Real-time Trace]
+    UI --> A[ReAct Orchestrator]
+
+    A --> JD[JD Parser]
+    A --> D[Candidate Discovery]
+    A --> C[Conversation Engine]
+    A --> R[Ranker]
+    A --> B[Bias Detector]
+    A --> M[Market Intelligence]
+
+    D --> P[Processed Candidate Data]
+
+    subgraph DataEngineering[Local Data Engineering]
+        RAW[Excel / JSON / CSV]
+        RAW --> ING[Ingestion]
+        ING --> SP[PySpark DataFrame]
+        SP --> CL[Cleaning]
+        CL --> V[Validation]
+        V --> T[Transformation]
+        T --> PQ[Parquet]
+        PQ --> AD[Python Adapter]
+        AD --> P
     end
-    
-    subgraph AgenticCore [ReAct Orchestrator]
-    Orchestrator[Orchestrator Agent]
-    Parser[JD Parser & Bias Detector]
-    Discovery[Candidate Discovery]
-    ConvEngine[Conversation Engine]
-    Ranker[Final Ranker]
-    end
-    
-    WebUI <--> Orchestrator
-    Orchestrator <--> Parser
-    Orchestrator <--> Discovery
-    Orchestrator <--> ConvEngine
-    Orchestrator <--> Ranker
-    Orchestrator -.-> SSE
-    
-    Orchestrator <--> LLM[Groq / OpenRouter]
-    Discovery <--> DataStore[(Excel/JSON Data Source)]
-    Ranker --> Output[Export Excel / JSON Report]
 
-🔄 Execution Flow
+    A --> L[LLM Provider]
+    R --> O[Ranked Shortlist]
+    O --> UI
+```
 
+---
+
+## Recruitment Workflow
+
+```mermaid
 sequenceDiagram
-    participant U as User
-    participant UI as Web Interface
-    participant A as Orchestrator Agent
-    participant L as LLM Engine
-    
-    U->>UI: Submit JD & Upload Talent Pool (Excel)
-    UI->>A: Trigger Scouting Process
-    
-    A->>L: Parse JD & Detect Bias
-    L-->>A: Structured JD Data + Bias Report
-    
-    A->>A: Query Candidate Pool (Semantic Match)
-    A->>A: Compute Match Score (Skills/Exp/Salary/Loc)
-    
-    loop For Top Candidates
-        A->>L: Simulate 6-Turn Conversation
-        L-->>A: Extract Enthusiasm & Commitment
-        A->>A: Compute Interest Score
+    participant Recruiter
+    participant UI as Flask UI
+    participant Agent as ReAct Agent
+    participant LLM as LLM
+    participant Data as Candidate Data
+
+    Recruiter->>UI: Submit Job Description
+    UI->>Agent: Start scouting process
+
+    Agent->>LLM: Analyze JD
+    LLM-->>Agent: Structured requirements
+
+    Agent->>Data: Discover candidate profiles
+    Data-->>Agent: Candidate pool
+
+    Agent->>Agent: Semantic matching
+    Agent->>Agent: Calculate Match Score
+
+    loop Top Candidates
+        Agent->>LLM: Simulate candidate conversation
+        LLM-->>Agent: Conversation responses
+        Agent->>Agent: Calculate Interest Score
     end
-    
-    A->>A: Generate Final Combined Ranking
-    A-->>UI: Stream Real-time Reasoning (SSE)
-    UI-->>U: Display Results & Enable Excel Export
 
-✨ Key Features
+    Agent->>Agent: Generate final ranking
+    Agent-->>UI: Stream progress via SSE
+    UI-->>Recruiter: Ranked shortlist + export
+```
 
-Feature
+---
 
-Description
+## Data Engineering Pipeline
 
-🤖 ReAct Agent Loop
+The project includes a **local, offline PySpark ETL pipeline** for candidate data. The pipeline is intentionally separated from the AI agent so that data processing and AI reasoning remain modular.
 
-Autonomous decision-making, dynamic threshold adjustment, and transparent reasoning traces.
+```text
+Excel / JSON / CSV
+        │
+        ▼
+   Data Ingestion
+        │
+        ▼
+  PySpark DataFrame
+        │
+        ▼
+ Cleaning & Validation
+        │
+        ▼
+  Data Transformation
+        │
+        ▼
+      Parquet
+        │
+        ▼
+  Python Data Adapter
+        │
+        ▼
+ Existing AI Agent
+        │
+        ▼
+ Matching & Ranking
+```
 
-📄 LLM-Powered Parser
+### Pipeline Responsibilities
 
-Extracts structured requirements from free-text JDs using Groq/OpenRouter.
+1. **Ingestion**
+   - Excel files are read through OpenPyXL and converted into Spark DataFrames.
+   - JSON and CSV can be processed using Spark readers.
 
-📊 Dynamic Excel Data
+2. **Cleaning**
+   - Normalizes known column names.
+   - Trims text fields.
+   - Handles supported missing values.
+   - Normalizes candidate skill representations.
 
-Upload custom .xlsx candidate pools, view dataset statistics, and export detailed shortlists.
+3. **Validation**
+   - Checks required fields.
+   - Reports duplicate candidate IDs.
+   - Validates numeric fields such as experience, salary, and notice period.
+   - Handles empty or malformed datasets.
 
-🧠 Semantic Matching
+4. **Transformation**
+   - Converts appropriate fields to consistent data types.
+   - Normalizes skills into structured representations.
+   - Produces a consistent candidate dataset for downstream processing.
 
-Synonym resolution + fuzzy matching (e.g., React ≈ ReactJS) for precise skill evaluation.
+5. **Storage**
+   - Writes the processed dataset locally in Parquet format.
+   - Generates a normalized JSON adapter for compatibility with the existing agent.
 
-💬 Conversation Engine
+### Output
 
-6-turn persona-based simulated dialogues to gauge candidate enthusiasm and engagement.
+```text
+data/processed/
+├── candidates_parquet/
+└── candidates.json
+```
 
-⚖️ Bias & Market Intel
+The Spark pipeline runs independently and is **not started for every Flask request**. Existing Excel/JSON processing remains available as a fallback.
 
-Scans JDs for gender/age bias and provides real-time salary benchmarks and hiring difficulty.
+---
 
-🖥️ Premium UX/UI
+## Scoring Model
 
-Material Design UI, Dark/Light mode toggle, glassmorphism, and SSE streaming.
+### Match Score — 60%
 
-🔄 Multi-LLM Fallback
+| Factor | Weight |
+|---|---:|
+| Skills | 40% |
+| Experience | 25% |
+| Salary | 20% |
+| Location | 15% |
 
-Automatic failover between Groq → OpenRouter for high reliability.
+The Match Score evaluates how closely a candidate fits the job requirements.
 
-🚀 Quick Start
+### Interest Score — 40%
 
-1. Clone & Install
+| Factor | Weight |
+|---|---:|
+| Enthusiasm | 40% |
+| Engagement | 30% |
+| Commitment | 30% |
 
-git clone https://github.com/YOUR_USERNAME/talent-scout-agent.git
-cd talent-scout-agent
+The Interest Score is derived from simulated candidate interactions and evaluates signals such as enthusiasm, engagement, availability, and commitment.
+
+### Final Score
+
+```text
+Final Score = (Match Score × 0.60) + (Interest Score × 0.40)
+```
+
+### Recommendation Tiers
+
+| Score | Recommendation |
+|---:|---|
+| ≥ 85 | Priority Hire |
+| ≥ 75 | Fast-Track |
+| ≥ 65 | Recommended |
+| < 65 | Backup |
+
+---
+
+## Project Structure
+
+```text
+Prosphire-Talent-Scout/
+│
+├── app.py
+├── main.py
+├── requirements.txt
+├── Dockerfile
+├── render.yaml
+│
+├── agent/
+│   ├── orchestrator.py
+│   ├── jd_parser.py
+│   ├── discovery.py
+│   ├── matcher.py
+│   ├── semantic_matcher.py
+│   ├── conversation_engine.py
+│   ├── interest_analyzer.py
+│   ├── ranker.py
+│   ├── bias_detector.py
+│   ├── market_intel.py
+│   ├── llm_engine.py
+│   └── output.py
+│
+├── data/
+│   ├── candidates.xlsx
+│   └── candidates.json
+│
+├── data_pipeline/
+│   ├── __init__.py
+│   └── spark_pipeline.py
+│
+├── templates/
+│   └── index.html
+│
+├── static/
+│   └── style.css
+│
+└── demo/
+    └── sample_jd.txt
+```
+
+---
+
+## Technology Stack
+
+### AI & Agentic Systems
+- Python
+- ReAct agent architecture
+- LLM-powered task execution
+- Semantic matching
+- Natural-language processing
+
+### Data Engineering
+- PySpark
+- ETL / data transformation
+- Data validation
+- Parquet
+- OpenPyXL
+- Pandas
+
+### Backend & Interface
+- Flask
+- HTML
+- CSS
+- JavaScript
+- Server-Sent Events (SSE)
+
+### Development & Deployment
+- Git
+- GitHub
+- Docker
+- Gunicorn
+- Render
+
+---
+
+## Local Setup
+
+### Prerequisites
+
+- Python 3.11+
+- Java 17+ for PySpark
+- Git
+- Docker (optional)
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/rainyyyyshrrr12/Prosphire-Talent-Scout.git
+cd Prosphire-Talent-Scout
+```
+
+### 2. Create a Virtual Environment
+
+#### Windows
+
+```bash
 python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Mac/Linux
-pip install -r requirements.txt
+venv\Scripts\activate
+```
 
-2. Configure API Keys
+#### macOS / Linux
 
-Copy .env.example to .env and add your Groq or OpenRouter API key:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
-cp .env.example .env
+### 3. Install Dependencies
 
-# Get keys from:
-# Groq: https://console.groq.com/keys
-# OpenRouter: https://openrouter.ai/keys
+```bash
+python -m pip install -r requirements.txt
+```
 
+---
+
+## Configuration
+
+The application uses environment variables for external LLM services.
+
+Create a `.env` file based on the variables expected by the project.
+
+**Never commit API keys or secrets to GitHub.**
+
+Example:
+
+```env
 GROQ_API_KEY=your_key_here
 OPENROUTER_API_KEY=your_key_here
+```
 
-3. Run
+Only configure the provider required by your local setup.
 
-Web UI (recommended):
+---
 
-python app.py
-# Open http://localhost:5000
+## Run the Data Engineering Pipeline
 
-CLI:
+Run the PySpark pipeline independently:
 
-python main.py --jd demo/sample_jd.txt
-
-4. Deploy (Render or Docker)
-
-
-
-Or use Docker:
-
-docker build -t talent-scout .
-docker run -p 5000:5000 --env-file .env talent-scout
-
-📊 Scoring Methodology
-
-Match Score (0-100) — 60% Weight
-
-Factor
-
-Weight
-
-Calculation Logic
-
-Skills
-
-40 pts
-
-Semantic overlap, synonym resolution, and fuzzy matching.
-
-Experience
-
-25 pts
-
-Range fit with a penalty for under/over qualification.
-
-Salary
-
-20 pts
-
-Budget alignment with an over-budget penalty curve.
-
-Location
-
-15 pts
-
-Exact match, remote bonus, relocation feasibility.
-
-Interest Score (0-100) — 40% Weight
-
-Factor
-
-Weight
-
-Calculation Logic
-
-Enthusiasm
-
-40 pts
-
-Positive/negative signal detection in conversation text.
-
-Engagement
-
-30 pts
-
-Questions asked, response length, engagement markers.
-
-Commitment
-
-30 pts
-
-Availability signals, notice period, commitment language.
-
-Final Combined Score
-
-Combined = (Match × 0.6) + (Interest × 0.4)
-
-Tier
-
-Score
-
-Recommended Recruiter Action
-
-🔥 Priority Hire
-
-≥ 85
-
-Contact within 24 hours
-
-⚡ Fast-Track
-
-≥ 75
-
-Schedule interview this week
-
-✅ Recommended
-
-≥ 65
-
-Standard interview pipeline
-
-📝 Backup
-
-< 65
-
-Keep warm for future roles
-
-📁 Project Structure
-
-talent-scout-agent/
-├── app.py                    # Flask web app with SSE streaming & Excel handling
-├── main.py                   # CLI interface
-├── agent/
-│   ├── orchestrator.py       # 🤖 ReAct agent loop (core)
-│   ├── jd_parser.py          # LLM-powered JD parsing
-│   ├── discovery.py          # Excel/JSON Candidate pool search
-│   ├── matcher.py            # Multi-factor match scoring
-│   ├── semantic_matcher.py   # Synonym + fuzzy skill matching
-│   ├── conversation_engine.py# 6-turn persona-based dialogues
-│   ├── interest_analyzer.py  # Interest signal extraction
-│   ├── ranker.py             # Combined score ranking
-│   ├── bias_detector.py      # ⚖️ JD bias analysis
-│   ├── market_intel.py       # 📈 Market intelligence
-│   ├── llm_engine.py         # Multi-provider LLM fallback
-│   └── output.py             # Report generation (Excel/JSON/MD)
-├── data/
-│   ├── candidates.xlsx       # Dynamic Excel candidate pool
-│   └── candidates.json       # Fallback candidate talent pool
-├── templates/
-│   └── index.html            # Premium web UI (Dark/Light mode)
-├── static/
-│   └── style.css             # Glassmorphic Material Design system
-├── demo/                     # Sample JD files
-├── Dockerfile                # Container deployment
-└── render.yaml               # Render.com config
-
-🛠️ Tech Stack
-
-Agent Framework: Custom ReAct orchestrator with tool-calling architecture
-
-LLMs: Groq (Llama 3.3 70B), OpenRouter
-
-Backend: Python 3.11, Flask
-
-Frontend: HTML/CSS/JS (Material UI, SSE streaming, Dark Mode)
-
-Data Handling: OpenPyXL (Excel), Pandas
-
-Deployment: Docker, Gunicorn, Render
-
-📝 License
-
-MIT License.
-
-Data Engineering Pipeline (Local PySpark)
-
-This project includes an offline, local-only PySpark ETL pipeline for candidate data. It does not alter the ReAct agent, matching, scoring, ranking, or web request flow.
-
-Excel / JSON / CSV
-        ↓
-Python / PySpark Ingestion
-        ↓
-PySpark DataFrame
-        ↓
-Cleaning + Validation + Transformation
-        ↓
-Parquet
-        ↓
-Python Adapter
-        ↓
-Existing AI Agent
-        ↓
-Matching + Ranking
-
-What it processes
-
-Excel is read with OpenPyXL and converted into a Spark DataFrame because Spark does not read .xlsx natively.
-
-JSON and CSV are read with Spark's native readers.
-
-The pipeline normalizes known column names, trims text, converts numeric experience/salary/notice fields, normalizes skills into lowercase arrays, reports empty core fields and duplicate IDs, and writes one record per candidate ID.
-
-It writes Parquet to data/processed/candidates_parquet/ and a normalized JSON adapter to data/processed/candidates.json.
-
-The JSON adapter keeps the existing agent boundary unchanged: CandidateDiscovery receives its normal list[dict] data. Spark is never started for a Flask request. Before the ETL has been run, the app continues to use the current Excel/JSON sources.
-
-Run locally
-
-Install dependencies (Java 17+ is required by PySpark):
-
-python -m pip install -r requirements.txt
+```bash
 python -m data_pipeline.spark_pipeline
+```
 
-Optional sources can be supplied explicitly:
+You can also provide an input file explicitly:
 
+```bash
 python -m data_pipeline.spark_pipeline --input data/candidates.json
+```
+
+For CSV input:
+
+```bash
 python -m data_pipeline.spark_pipeline --input data/candidates.csv
+```
 
-Then run the existing web app as usual:
+The processed data is written locally under:
 
+```text
+data/processed/candidates_parquet/
+```
+
+and the normalized JSON adapter is written to:
+
+```text
+data/processed/candidates.json
+```
+
+---
+
+## Run the Web Application
+
+```bash
 python app.py
+```
 
-The pipeline is intentionally an offline command. Re-run it after replacing the default source data; uploaded Excel files continue to be used directly by the existing UI and do not trigger Spark automatically.
+Then open:
+
+```text
+http://localhost:5000
+```
+
+---
+
+## Run the CLI
+
+```bash
+python main.py --jd demo/sample_jd.txt
+```
+
+---
+
+## Docker
+
+Build the image:
+
+```bash
+docker build -t ai-talent-scout .
+```
+
+Run the application:
+
+```bash
+docker run -p 5000:5000 --env-file .env ai-talent-scout
+```
+
+---
+
+## Design Principles
+
+### Separation of Concerns
+
+The project separates data engineering from AI reasoning:
+
+```text
+Data Engineering
+      ↓
+PySpark ETL
+      ↓
+Processed Candidate Data
+      ↓
+Python Adapter
+      ↓
+AI Agent
+      ↓
+Recruitment Intelligence
+```
+
+This allows the data pipeline to evolve independently without tightly coupling Spark to the agent orchestration layer.
+
+### Local-First Data Processing
+
+The PySpark pipeline is designed to run locally. It does not require:
+
+- AWS S3
+- Databricks
+- Hadoop clusters
+- Azure
+- Google Cloud
+- Kafka
+
+This keeps the data-processing workflow reproducible and cost-free for development.
+
+---
+
+## What Makes This Different?
+
+Traditional recruitment tools often rely heavily on keyword matching.
+
+AI Talent Scout combines several layers:
+
+```text
+Job Description
+       ↓
+Requirement Extraction
+       ↓
+Candidate Discovery
+       ↓
+Semantic Matching
+       ↓
+Multi-Factor Match Score
+       ↓
+Candidate Conversation
+       ↓
+Interest Score
+       ↓
+Final Ranking
+```
+
+The result is intended to give recruiters a more complete view of both:
+
+**"Can this candidate do the job?"**
+
+and
+
+**"How interested is this candidate?"**
+
+---
+
+## Future Improvements
+
+Potential future extensions include:
+
+- Cloud-based data storage
+- Distributed Spark processing
+- Automated pipeline scheduling
+- Additional candidate data sources
+- Production-grade monitoring
+- More advanced candidate embeddings
+- Human-in-the-loop recruiter feedback
+- Persistent analytics and reporting
+
+---
+
+## Author
+
+**Rainy Sharma**  
+B.Tech — Computer Science Engineering (Data Science)  
+Manipal University Jaipur
+
+- GitHub: https://github.com/rainyyyyshrrr12
+- Live Demo: https://prosphire-talent-scout.onrender.com/
+
+---
+
+## License
+
+This project is licensed under the MIT License.
